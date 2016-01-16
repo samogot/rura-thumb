@@ -35,24 +35,19 @@ function thumb($repo, $file, $width, $archived, $response)
                 }
             }
             $cacheFile = $cacheDir . '/' . $width . 'px-' . $pathParts['basename'];
-            if (is_readable($cacheFile)) {
-                $finfo          = finfo_open(FILEINFO_MIME_TYPE);
-                $type           = finfo_file($finfo, $cacheFile);
-                $existingStream = new \GuzzleHttp\Psr7\LazyOpenStream($cacheFile, 'r');
-                return $response->withHeader('Content-type', $type)->withBody($existingStream);
-            } else {
+            if (!is_readable($cacheFile)) {
                 $image = new ImageResize($path);
                 if ($width > $image->getSourceWidth()) {
                     return $response->withRedirect('/images/' . $file);
                 } else {
                     $image->resizeToWidth($width);
                     $image->save($cacheFile);
-                    $finfo     = finfo_open(FILEINFO_MIME_TYPE);
-                    $type      = finfo_file($finfo, $cacheFile);
-                    $newStream = new \GuzzleHttp\Psr7\LazyOpenStream($cacheFile, 'r');
-                    return $response->withHeader('Content-type', $type)->withBody($newStream);
                 }
             }
+            $finfo  = finfo_open(FILEINFO_MIME_TYPE);
+            $type   = finfo_file($finfo, $cacheFile);
+            $stream = new \GuzzleHttp\Psr7\LazyOpenStream($cacheFile, 'r');
+            return $response->withHeader('Content-type', $type)->withBody($stream);
         }
     }
     return $response->withStatus(404);
