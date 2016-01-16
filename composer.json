@@ -1,0 +1,7 @@
+{
+  "require": {
+    "slim/slim": "^3.0",
+    "eventviva/php-image-resize": "1.5.*",
+    "guzzlehttp/psr7": "*"
+  }
+}
