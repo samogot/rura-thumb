@@ -18,7 +18,7 @@ $app = new \Slim\App(
  * @param \Slim\Http\Response $response
  * @return mixed
  */
-function thumb($repo, $file, $width, $archived, $response)
+function thumb($repo, $file, $width, $archived, $response, $format)
 {
     $md5  = md5($file);
     $file = $md5[0] . '/' . $md5[0] . $md5[1] . '/' . $file;
@@ -34,14 +34,22 @@ function thumb($repo, $file, $width, $archived, $response)
                     return $response->withStatus(403);
                 }
             }
-            $cacheFile = $cacheDir . '/' . $width . 'px-' . $pathParts['basename'];
+            if ($format != 'jpg') {
+                $cacheFile = $cacheDir . '/' . $width . 'px-' . $pathParts['basename'];
+            } else {
+                $cacheFile = $cacheDir . '/' . $width . 'px-' . $pathParts['filename'] . '.jpg';
+            }
             if (!is_readable($cacheFile)) {
                 $image = new ImageResize($path);
                 if ($width > $image->getSourceWidth()) {
                     return $response->withRedirect('/images/' . $file);
                 } else {
                     $image->resizeToWidth($width);
-                    $image->save($cacheFile);
+                    if ($format != 'jpg') {
+                        $image->save($cacheFile);
+                    } else {
+                        $image->save($cacheFile, IMAGETYPE_JPEG);
+                    }
                 }
             }
             $finfo  = finfo_open(FILEINFO_MIME_TYPE);
@@ -62,7 +70,8 @@ $app->get(
 
         $file  = $args['file'];
         $width = intval($args['width'] ?: 1080);
-        return thumb($this->repo, $file, $width, true, $response);
+        $format = pathinfo($args['file1'], PATHINFO_EXTENSION);
+        return thumb($this->repo, $file, $width, true, $response, $format);
     }
 );
 $app->get(
@@ -73,7 +82,8 @@ $app->get(
 
         $file  = $args['file'];
         $width = intval($args['width'] ?: 1080);
-        return thumb($this->repo, $file, $width, false, $response);
+        $format = pathinfo($args['file1'], PATHINFO_EXTENSION);
+        return thumb($this->repo, $file, $width, false, $response, $format);
     }
 );
 
